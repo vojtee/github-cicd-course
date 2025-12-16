@@ -1,11 +1,11 @@
-name: task-a ci
+name: task-a cd
 
-#on: [push]
+on: [push]
 
-on:
-  pull_request:
-    paths:
-      - 'task_a/**'
+#on:
+#  pull_request:
+#    paths:
+#      - 'task_a/**'
 
 
 
