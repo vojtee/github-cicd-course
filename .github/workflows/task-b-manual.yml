@@ -1,13 +1,17 @@
 name: task-b manual
 
-on: 
+on:
   workflow_dispatch:
     inputs:
       message:
         description: 'Message'
         required: true
         default: 'Hello CI/CD'
-      # TODO: add tag input
+      tag:
+        description: 'Docker image tag'
+        required: true
+        default: 'latest'
+
 permissions:
   contents: read
   packages: write
@@ -19,21 +23,38 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-      - name: Replace message in index.hml
+      - name: Replace message in index.html
         run: sed -i "s#DEFAULT_MESSAGE#${{ inputs.message }}#" ./task_b/index.html
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to GitHub container registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io/${{ github.repository }}
+          registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN  }}
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
-          tags: type=ref,event=tag
-      # TODO: build and push docker image
-  # TODO: Add test job
+          context: .
+          file: ./task_b/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+
+  test:
+    runs-on: "ubuntu-latest"
+    name: Test Docker container
+    needs: docker
+    services:
+      test_container:
+        image: ghcr.io/${{ github.repository }}:${{ inputs.tag }}
+        ports:
+          - 8080:80
+    steps:
+      - name: Wait for service to be ready
+        run: |
+          for i in {1..10}; do
+            curl -sSf 127.0.0.1:8080/index.html && break || sleep 3
+          done
+      - name: Fetch index.html
+        run: curl 127.0.0.1:8080/index.html
