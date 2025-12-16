@@ -18,9 +18,10 @@ jobs:
         # TODO: run pytest
         - name: Run pytest
           run: |
-            pytest ./task_a --html=report.html
+            pytest ./task_a/task_a.py --html=report.html
         - name: Upload test report
           uses: actions/upload-artifact@v3
           with:
             name: pytest-report
             path: report.html
+          # tt
