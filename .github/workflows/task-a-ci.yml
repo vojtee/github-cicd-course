@@ -1,4 +1,4 @@
-name: task-a ci
+name: task-a cd
 
 on:
   pull_request:
